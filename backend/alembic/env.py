@@ -18,7 +18,14 @@ from app.database import Base
 from app import models  # noqa: F401 - ensure every model is imported/registered
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
+# Same driver rewrite as app/database.py: platforms (Railway/Heroku) inject a
+# bare postgresql:// URL which SQLAlchemy maps to psycopg2 (not installed);
+# we ship psycopg3, so force the +psycopg dialect.
+_db_url = settings.DATABASE_URL
+if _db_url.startswith("postgresql://"):
+    _db_url = _db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+config.set_main_option("sqlalchemy.url", _db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -32,7 +39,7 @@ def _is_sqlite() -> bool:
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.DATABASE_URL,
+        url=_db_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
