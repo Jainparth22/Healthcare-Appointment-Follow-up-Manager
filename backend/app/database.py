@@ -50,6 +50,9 @@ class UTCDateTime(TypeDecorator):
 
 def _make_engine():
     url = settings.DATABASE_URL
+    # Railway/Heroku provide postgresql:// (psycopg2); we use psycopg3 (psycopg+binary)
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
     if url.startswith("sqlite"):
         is_memory = ":memory:" in url or url == "sqlite://"
         kwargs = dict(
