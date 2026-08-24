@@ -1,0 +1,52 @@
+app = "hcv-web"
+primary_region = "bom"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  ENV = "production"
+  PYTHONUNBUFFERED = "1"
+
+[processes]
+  web = "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8080 --proxy-headers"
+  worker = "celery -A app.celery_app:celery_app worker --loglevel=info --concurrency=4"
+  beat = "celery -A app.celery_app:celery_app beat --loglevel=info"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  min_machines_running = 1
+  processes = ["web"]
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "15s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "5s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+  processes = ["web"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+  processes = ["worker"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+  processes = ["beat"]
