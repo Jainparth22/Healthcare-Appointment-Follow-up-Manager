@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block page %}book{% endblock %}
+{% block body_attrs %} data-doctor-id="{{ doctor_id }}"{% endblock %}
+{% block content %}
+<a href="/patient" class="back">&larr; Back to dashboard</a>
+
+<div class="card" id="doctor-header">
+  <h2 id="doctor-name">Loading&hellip;</h2>
+  <p id="doctor-meta" class="muted"></p>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>1. Pick a date &amp; time</h3>
+    <label>Date<input type="date" id="slot-date"></label>
+    <div id="slot-list" class="slots"></div>
+    <p id="slot-empty" class="muted hidden">No open slots on this day. Try another date.</p>
+  </div>
+
+  <div class="card" id="booking-panel">
+    <div id="step-idle" class="muted">Select a slot to begin booking.</div>
+
+    <div id="step-symptoms" class="hidden">
+      <h3>2. Describe your symptoms</h3>
+      <p class="muted" id="hold-note"></p>
+      <div id="hold-timer" class="alert" style="margin:8px 0;padding:8px 10px;font-weight:600">Hold: --:--</div>
+      <p class="muted" style="font-size:12px">Complete symptoms & confirm before the timer expires or you'll need to re-pick a slot.</p>
+      <textarea id="symptoms" rows="5" placeholder="e.g. Chest tightness for two days, worse on exertion, mild shortness of breath."></textarea>
+      <button class="btn" id="submit-symptoms" type="button">Analyse &amp; preview</button>
+    </div>
+
+    <div id="step-previsit" class="hidden">
+      <h3>3. Pre-visit summary <span id="previsit-source" class="tag"></span></h3>
+      <div id="hold-timer-previsit" class="alert" style="margin:8px 0;padding:8px 10px;font-weight:600">Hold: --:--</div>
+      <div id="previsit-body"></div>
+      <button class="btn" id="confirm-btn" type="button">Confirm appointment</button>
+    </div>
+
+    <div id="step-done" class="hidden">
+      <div class="alert success">Appointment confirmed. A confirmation email has been queued and a calendar event created if Google is connected.</div>
+      <a href="/patient" class="btn">Go to my appointments</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block page %}admin{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="row space-between">
+    <h2>Overview</h2>
+    <button class="btn-ghost" id="refresh-stats" type="button">Refresh</button>
+  </div>
+  <div id="admin-stats" class="grid-4" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:12px"></div>
+  <div id="admin-recent" style="margin-top:14px"></div>
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <div class="row space-between">
+      <h2>Patients</h2>
+      <button class="btn-ghost" id="refresh-patients" type="button">Refresh</button>
+    </div>
+    <div id="patient-admin-list" class="list" style="max-height:360px;overflow:auto"></div>
+  </div>
+  <div class="card">
+    <div class="row space-between">
+      <h2>All Appointments</h2>
+      <div class="row"><select id="appt-status-filter" style="width:auto"><option value="">All</option><option value="holding">Holding</option><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select><button class="btn-ghost" id="refresh-admin-appts" type="button">Refresh</button></div>
+    </div>
+    <div id="admin-appt-list" class="list" style="max-height:360px;overflow:auto"></div>
+  </div>
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h2>Add a doctor</h2>
+    <form id="create-doctor">
+      <label>Full name<input name="full_name" required></label>
+      <label>Email<input type="email" name="email" required></label>
+      <label>Password<input type="password" name="password" minlength="8" required></label>
+      <label>Specialisation<input name="specialisation" placeholder="e.g. Cardiology" required></label>
+      <label>Bio (optional)<textarea name="bio" rows="2"></textarea></label>
+      <div class="row">
+        <label style="flex:1">Slot duration (min)<input type="number" name="slot_duration_min" value="30" min="5" max="240"></label>
+        <label style="flex:1">Phone (optional)<input name="phone"></label>
+      </div>
+
+      <h3 style="margin-top:14px">Working hours</h3>
+      <div id="wh-rows"></div>
+      <button class="btn-ghost" id="add-wh" type="button">+ Add working hours</button>
+
+      <div style="margin-top:14px"><button class="btn" type="submit">Create doctor</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="row space-between">
+      <h2>Doctors</h2>
+      <button class="btn-ghost" id="refresh-doctors" type="button">Refresh</button>
+    </div>
+    <div id="doctor-admin-list" class="list"></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="row space-between">
+    <h2>Email outbox &amp; dead-letter</h2>
+    <div class="row">
+      <select id="outbox-filter" style="width:auto">
+        <option value="">All</option>
+        <option value="pending">Pending</option>
+        <option value="sent">Sent</option>
+        <option value="failed">Failed</option>
+        <option value="dead">Dead</option>
+      </select>
+      <button class="btn-ghost" id="refresh-outbox" type="button">Refresh</button>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table id="outbox-table">
+      <thead><tr><th>To</th><th>Subject</th><th>Kind</th><th>Status</th><th>Attempts</th><th>Error</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Template for one working-hours row (cloned by app.js) -->
+<template id="wh-template">
+  <div class="wh-row">
+    <label>Day
+      <select name="day_of_week">
+        <option value="0">Mon</option><option value="1">Tue</option><option value="2">Wed</option>
+        <option value="3">Thu</option><option value="4">Fri</option><option value="5">Sat</option><option value="6">Sun</option>
+      </select>
+    </label>
+    <label>Start<input type="time" name="start_time" value="09:00"></label>
+    <label>End<input type="time" name="end_time" value="17:00"></label>
+    <button class="btn-ghost remove-wh" type="button">&times;</button>
+  </div>
+</template>
+{% endblock %}

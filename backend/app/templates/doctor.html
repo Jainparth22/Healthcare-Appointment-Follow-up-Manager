@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block page %}doctor{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="row space-between">
+    <h2>Schedule &mdash; holding &amp; confirmed visits</h2>
+    <button class="btn-ghost" id="refresh-schedule" type="button">Refresh</button>
+  </div>
+  <div id="schedule" class="list"></div>
+</section>
+
+<section class="card">
+  <div class="row space-between">
+    <div>
+      <h2 style="margin-bottom:2px">Google Calendar</h2>
+      <span class="muted">Confirmed visits are mirrored to your calendar.</span>
+    </div>
+    <span id="google-status" class="muted">&hellip;</span>
+  </div>
+</section>
+{% endblock %}

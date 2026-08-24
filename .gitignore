@@ -1,0 +1,44 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+ENV/
+
+# ---- Test / lint caches ----
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ---- Secrets / local config (keep .env.example tracked) ----
+.env
+.env.*
+!.env.example
+
+# ---- Databases (local SQLite + any temp DBs) ----
+*.db
+*.sqlite3
+*.sqlite
+
+# ---- Celery ----
+celerybeat-schedule*
+*.pid
+
+# ---- Editors / OS ----
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ---- Claude Code local tooling (not project source) ----
+.claude/

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block page %}login{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card auth-card" data-initial="{{ 'register' if register_open else 'login' }}">
+    <h1 class="gradient-text">Welcome</h1>
+    <p class="muted">Book appointments, get AI pre-visit summaries and medication reminders.</p>
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+    <div class="tabs">
+      <button type="button" class="tab" data-tab="login">Log in</button>
+      <button type="button" class="tab" data-tab="register">Register</button>
+    </div>
+
+    <form method="post" action="/login" class="tab-panel" data-panel="login">
+      <label>Email<input type="email" name="email" autocomplete="email" required></label>
+      <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Log in</button>
+    </form>
+
+    <form method="post" action="/register" class="tab-panel" data-panel="register">
+      <label>Full name<input name="full_name" required></label>
+      <label>Email<input type="email" name="email" autocomplete="email" required></label>
+      <label>Phone (optional)<input name="phone"></label>
+      <label>Password<input type="password" name="password" minlength="8" autocomplete="new-password" required></label>
+      <button class="btn" type="submit">Create patient account</button>
+      <p class="muted">Doctors &amp; admins are created by an administrator.</p>
+    </form>
+
+    <div class="demo" style="text-align:left; font-size:0.86rem; line-height:1.7; display:flex; flex-direction:column; gap:9px; margin-top:6px">
+      <div><strong>Demo accounts</strong> <span class="muted">(tap to fill)</span></div>
+      <div class="demo-row" data-email="admin@clinic.test" data-pass="admin12345" style="cursor:pointer; padding:6px 8px; border-radius:8px; background:rgba(23,63,58,0.06)"><span class="badge" style="background:var(--forest);color:#fff;font-size:0.65rem">ADMIN</span> <strong>admin@clinic.test</strong> / admin12345</div>
+      <div class="demo-row" data-email="dr.rao@clinic.test" data-pass="doctor12345" style="cursor:pointer; padding:6px 8px; border-radius:8px; background:rgba(200,90,63,0.08)"><span class="badge" style="background:var(--brand);color:#fff;font-size:0.65rem">DOCTOR</span> <strong>dr.rao@clinic.test</strong> / doctor12345</div>
+      <div class="demo-row" data-email="patient@clinic.test" data-pass="patient12345" style="cursor:pointer; padding:6px 8px; border-radius:8px; background:rgba(132,149,138,0.12)"><span class="badge" style="background:var(--sage);color:#fff;font-size:0.65rem">PATIENT</span> <strong>patient@clinic.test</strong> / patient12345</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

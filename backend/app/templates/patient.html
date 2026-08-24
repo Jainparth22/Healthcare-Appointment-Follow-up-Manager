@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block page %}patient{% endblock %}
+{% block content %}
+<section class="grid-2">
+  <div class="card">
+    <h2>Find a doctor</h2>
+    <div class="row">
+      <input id="doc-search" placeholder="Specialisation, e.g. Cardiology">
+      <button class="btn" id="doc-search-btn" type="button">Search</button>
+    </div>
+    <div id="doctor-list" class="list" style="margin-top:14px"></div>
+  </div>
+
+  <div class="card">
+    <div class="row space-between">
+      <h2>My appointments</h2>
+      <button class="btn-ghost" id="refresh-appts" type="button">Refresh</button>
+    </div>
+    <div id="appt-list" class="list"></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="row space-between">
+    <div>
+      <h2 style="margin-bottom:2px">Google Calendar</h2>
+      <span class="muted">Sync confirmed appointments to your calendar.</span>
+    </div>
+    <span id="google-status" class="muted">&hellip;</span>
+  </div>
+</section>
+{% endblock %}

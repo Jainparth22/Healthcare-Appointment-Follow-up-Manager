@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+</head>
+<body data-page="{% block page %}{% endblock %}"{% block body_attrs %}{% endblock %}>
+  <header class="topbar">
+    <a class="brand" href="/">&#127973; {{ app_name }}</a>
+    <nav>
+      {% if user %}
+        <span class="user">{{ user.full_name }} &middot; {{ user.role }}</span>
+        <form method="post" action="/logout" class="inline" id="logout-form"><input type="hidden" name="csrf_token" value="{{ request.cookies.get('hcv_csrf','') }}"><button class="btn-ghost" type="submit">Log out</button></form>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <div id="toast" class="toast" hidden></div>
+  <script src="{{ asset_url('app.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+# Healthcare Appointment & Follow-up Manager — Implementation Plan (v2, production-grade)
+
+## Context
+
+Build the clinic platform from `Healthcare_Appointment_Manager (1) (2)-1.pdf`: **patient /
+doctor / admin** portals. Patients book slots, submit symptoms (→ LLM pre-visit summary with
+urgency), doctors submit post-visit notes + prescription (→ patient-friendly LLM summary), and
+both sides are kept informed via **email** and **Google Calendar**. Must prevent double-booking,
+handle simultaneous bookings safely, notify patients when a doctor goes on leave, send
+medication reminders, and degrade gracefully when LLM / email / calendar are unavailable.
+
+Greenfield dir (only the PDF). **Backend = FastAPI. Frontend = Jinja2 + HTMX in the same
+process** (single service). Per the user's v2 direction, this is engineered like a senior
+(5y+) system: **Redis + Celery** for async/scheduled work, **Redis caching**, distributed
+locking, idempotency, rate limiting, thorough edge-case handling, and a deep system-design
+write-up. **LLM = Google Gemini** (free/fast) behind a **pluggable provider interface** (Claude
+or others swap in). Everything degrades gracefully so it still runs with **zero external infra**
+locally (SQLite + Celery eager + no-op cache), and runs the full topology via **docker-compose**.
+
+## Tech stack
+
+- **FastAPI** + **Uvicorn/Gunicorn**; **Jinja2** + **HTMX** + light CSS/JS (one service).
+- **SQLAlchemy 2.0 (sync)** + **Alembic** migrations, one `DATABASE_URL` switch: **SQLite** for dev + tests (WAL / in-memory, zero infra), **PostgreSQL** for deploy. Portable types only (`JSON`, tz-aware UTC, no PG-only DDL); the CAS booking design (below) needs **no `SELECT FOR UPDATE`**, so both engines behave identically. Fast tests run on SQLite (no separate Postgres CI job).
+- **Redis** — Celery broker/result backend, cache, distributed locks, idempotency store, rate limiter.
+- **Celery** (worker + **Beat**) — async email/calendar tasks + periodic jobs. `CELERY_TASK_ALWAYS_EAGER=true` runs tasks inline for no-broker local dev.
+- **LLM:** `google-genai` (Gemini, default `gemini-2.0-flash`) via an `LLMProvider` protocol; structured pre-visit output via `response_schema` (Pydantic). Pluggable `LLM_PROVIDER` (`gemini` default; optional `anthropic`). Always wrapped with a deterministic fallback.
+- **Auth:** JWT (`PyJWT`) OAuth2 password flow; `bcrypt` hashing. Token as httpOnly cookie (pages) **and** `Authorization: Bearer` (API). RBAC via `require_role(...)`. **CSRF** (double-submit token) for cookie-auth form posts.
+- **Email:** pluggable `EMAIL_BACKEND` (`console` default, `smtp`, `sendgrid`) through an **outbox** with Celery-driven retries.
+- **Google Calendar:** `google-api-python-client` + `google-auth-oauthlib`, OAuth 2.0; refresh tokens **encrypted at rest** (Fernet). No-op + logged when unconfigured.
+- **Config:** `pydantic-settings`. **Security:** rate limiting, input validation, secrets via env. **Observability:** structured JSON logging + request IDs, `/healthz` (live), `/readyz` (DB+Redis). **Tests:** `pytest`.
+
+## Project structure
+
+```
+HCV/
+├── backend/
+│   ├── app/
+│   │   ├── main.py             # app factory, routers, static/templates, logging, health
+│   │   ├── config.py           # Settings (pydantic-settings)
+│   │   ├── database.py         # engine, SessionLocal, Base, get_db, SQLite WAL pragma
+│   │   ├── models.py           # SQLAlchemy models (schema below)
+│   │   ├── schemas.py          # Pydantic request/response models
+│   │   ├── security.py         # bcrypt, JWT, cookie/bearer current_user, require_role, CSRF
+│   │   ├── celery_app.py       # Celery instance + Beat schedule
+│   │   ├── seed.py             # admin + sample doctor/patient/data
+│   │   ├── infra/
+│   │   │   ├── redis.py        # redis client (lazy, degrades if down)
+│   │   │   ├── cache.py        # cache-aside get/set + versioned invalidation (no-op if Redis down)
+│   │   │   ├── locks.py        # Redis distributed lock (SET NX PX + Lua release), DB-unique fallback
+│   │   │   ├── idempotency.py  # Idempotency-Key store/replay
+│   │   │   └── ratelimit.py    # Redis token-bucket limiter
+│   │   ├── routers/
+│   │   │   ├── auth.py         # register, login(cookie), logout, me
+│   │   │   ├── admin.py        # doctor CRUD, working hours, leave (+ conflict notify)
+│   │   │   ├── doctors.py      # search by specialisation, profile, cached slots
+│   │   │   ├── appointments.py # hold → symptoms/pre-visit → confirm → cancel/reschedule
+│   │   │   ├── visits.py       # doctor post-visit notes + prescription → post-visit summary
+│   │   │   ├── integrations.py # google oauth connect/callback/status
+│   │   │   ├── health.py       # /healthz, /readyz
+│   │   │   └── pages.py        # Jinja HTML routes for the three portals
+│   │   ├── services/
+│   │   │   ├── llm/            # base.py (protocol+fallback), gemini.py, anthropic.py, factory.py
+│   │   │   ├── email.py        # backends + outbox enqueue/dispatch
+│   │   │   ├── calendar.py     # Google Calendar create/update/delete + oauth + token crypto
+│   │   │   ├── booking.py      # slot generation, hold, confirm, cancel, conflict detection
+│   │   │   └── reminders.py    # medication-reminder generation from prescription frequency
+│   │   ├── tasks/              # celery tasks: email.py, calendar.py, reminders.py, holds.py
+│   │   ├── templates/          # base, login, patient/*, doctor/*, admin/*
+│   │   └── static/             # style.css, htmx, app.js
+│   ├── alembic/ + alembic.ini
+│   ├── tests/                  # concurrency, slots, leave, llm-fallback, rbac, cache, idempotency
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── Dockerfile
+├── docker-compose.yml          # web, worker, beat, redis, (postgres)
+├── README.md                   # setup, env, DB schema, LLM prompts, GCal steps, deploy
+├── DESIGN.md                   # required ≤800-word system-design write-up
+├── ARCHITECTURE.md             # extensive senior deep-dive (diagrams, flows, scaling, failure modes)
+└── Healthcare_Appointment_Manager (1) (2)-1.pdf  (existing)
+```
+
+## Database schema (SQLAlchemy + Alembic)
+
+- **users** — `id, email(unique), password_hash, role(patient|doctor|admin), full_name, phone, created_at`
+- **doctor_profiles** — `id, user_id(FK,unique), specialisation, bio, slot_duration_min, active, created_at`
+- **doctor_working_hours** — `id, doctor_id(FK), day_of_week(0-6), start_time, end_time`
+- **doctor_leaves** — `id, doctor_id(FK), leave_date, reason, created_at` · unique `(doctor_id, leave_date)`
+- **slots** *(inventory / concurrency layer — the unit of CAS)* — `id, doctor_id(FK), start_time(UTC), end_time, status(free|held|booked|blocked), held_by(FK users?), hold_expires_at?, appointment_id(FK?), version(int), created_at, updated_at`
+  - **unique `(doctor_id, start_time)`** → makes slot generation idempotent and is the L3 integrity net.
+  - indexes: `(doctor_id, start_time)` for availability; `(status, hold_expires_at)` for the expiry sweep.
+- **appointments** *(clinical record layer)* — `id, slot_id(FK, unique), doctor_id(FK), patient_id(FK), status(holding|confirmed|completed|cancelled|expired), symptoms, doctor_notes, google_event_id_patient, google_event_id_doctor, created_at, updated_at`
+  - references a `slots` row; clinical data lives here, availability/racing lives on `slots` — clean separation of concerns.
+- **summaries** — `id, appointment_id(FK), kind(previsit|postvisit), provider, model, prompt, raw_output, data_json, status(ok|fallback|error), latency_ms, created_at` (LLM outputs stored in DB)
+- **prescriptions** — `id, appointment_id(FK), patient_id, doctor_id, medication_name, dosage, frequency, times_per_day, duration_days, instructions, start_date, created_at`
+- **medication_reminders** — `id, prescription_id(FK), patient_id, scheduled_at, status(pending|sent|failed), sent_at` · unique `(prescription_id, scheduled_at)` (idempotent generation)
+- **email_outbox** — `id, to_email, subject, body_html, body_text, kind, status(pending|sent|failed|dead), attempts, max_attempts, last_error, scheduled_at, sent_at, related_appointment_id, dedupe_key(unique), created_at`
+- **google_credentials** — `id, user_id(unique), enc_token, enc_refresh_token, token_uri, client_id, scopes, expiry` (refresh token Fernet-encrypted)
+
+## Concurrency, caching & the graded/hard problems
+
+**Double-booking + simultaneous attempts (layered — inventory + lock-free CAS):**
+The `slots` row is the unit of concurrency control. A hold is a **compare-and-swap** — one atomic statement whose row-count is the verdict:
+1. **L1 Redis lock** `SET lock:slot:{slot_id} <token> NX PX 5000` before the CAS → fast cross-node rejection + instant 409; released via Lua compare-and-del. An *optimization*, never the source of truth.
+2. **L2 CAS (the guarantee):** `UPDATE slots SET status='held', held_by=:p, hold_expires_at=:exp, version=version+1 WHERE id=:id AND status='free'`. `rows_affected == 1` → held; `0` → someone won the race → **409**. No exceptions, no locks, and **identical on SQLite and Postgres** (no `FOR UPDATE`).
+3. **L3 unique `(doctor_id, start_time)`** on `slots` → last-resort integrity net (also makes generation idempotent).
+Confirm/cancel/expire are the same CAS with different guards, so every state transition is race-safe by construction.
+
+**Idempotency:** booking/confirm accept an `Idempotency-Key`; first result cached in Redis (TTL), replays return the same response — kills double-clicks and client retries.
+
+**Slot-hold mechanism (2-phase, on `slots`):** `POST /hold` → L1 lock + L2 CAS `free→held` (`hold_expires_at=now+HOLD_MINUTES`), then create the `appointments` row (`status=holding`) → submit symptoms + pre-visit summary → `POST /confirm` → CAS `held→booked` guarded by `held_by=:p AND hold_expires_at>now` (else 409 = expired/stolen, re-pick), appointment `→confirmed`, enqueue email + calendar tasks. A **Celery Beat** job expires stale holds: `UPDATE slots SET status='free', held_by=NULL, appointment_id=NULL WHERE status='held' AND hold_expires_at<now` (+ appointment `→expired`). The slot is genuinely reserved during form-fill because it sits in `held`.
+
+**Slot generation (materialization):** slots are built from working hours idempotently — a nightly **Beat job** pre-generates a rolling window (e.g. 60 days) and availability queries **lazily** fill any gap for a requested date via `INSERT … ON CONFLICT (doctor_id,start_time) DO NOTHING`. Changing working hours regenerates only **future `free`** slots (held/booked preserved; a booked slot now outside hours is flagged, not silently dropped). Leave dates are `blocked` (below).
+
+**Caching (cache-aside + versioned invalidation):** cache doctor search, doctor profile+hours, and available-slot lists (read from the `slots` table). Slot/profile keys embed a per-doctor **version counter** bumped on any booking/cancel/leave/hours change → O(1) invalidation, no key scans. Short TTLs as a backstop. All cache ops are wrapped: **Redis down ⇒ transparent DB fallback**.
+
+**Leave conflict handling:** `POST /admin/doctors/{id}/leave` records the date (unique `(doctor_id, leave_date)` → idempotent), cancels the appointment on any `held|booked` slot that day (**enqueue cancellation emails to affected patients**, delete their calendar events), then `UPDATE slots SET status='blocked' WHERE doctor_id=? AND date=? AND status IN ('free','held','booked')`, and bumps the doctor's cache version; returns the affected list. Removing leave flips `blocked→free`.
+
+**Notification reliability (at-least-once):** every email is persisted to `email_outbox` (with a `dedupe_key`) *before* sending; a Celery task sends it; failures increment `attempts` → retried with exponential backoff up to `max_attempts`, then `dead`. Survives SMTP/provider outages; `dedupe_key` prevents duplicates on retry.
+
+**LLM failure handling:** `services/llm` wraps every provider call in try/except + timeout. Pre-visit returns validated `PreVisitSummary(urgency_level: Low|Medium|High, chief_complaint, suggested_questions[3])` (Gemini `response_schema`); on missing key / API error / timeout / validation error it falls back to a deterministic keyword urgency heuristic and stores `status='fallback'`. Post-visit falls back to a templated summary. Booking/visit flows never break. **Prompts are verbatim from the PDF**, stored per-summary and documented in README.
+
+**Google Calendar:** create on confirm, update on reschedule, delete on cancel (via Celery, retried); `google_event_id_*` stored. Token refresh handled; unconnected ⇒ logged no-op.
+
+## Edge cases explicitly handled (senior checklist)
+
+- Race: two holds on one slot → one 201, one 409 (L1 Redis lock + L2 CAS rowcount == 1).
+- Hold expires between symptom-submit and confirm → confirm CAS fails (`held_by`/expiry guard) → 409 with re-pick prompt.
+- Booking a slot that doesn't exist / is `blocked` / in the past / outside working hours → 404/422 (inventory has no such `free` row).
+- Working-hours change while bookings exist → only future `free` slots regenerated; `held`/`booked` preserved; a booked slot now outside hours is flagged for admin, never silently dropped.
+- Slot generation is idempotent (`INSERT … ON CONFLICT DO NOTHING`) → nightly Beat job + lazy per-date fill can run concurrently with no dupes.
+- Abandoned hold (patient leaves mid-flow) → Beat expiry CAS returns the slot to `free`.
+- Reschedule → CAS the new slot `free→held/booked`; only on success free the old slot; if the new CAS fails, abort and keep the old booking (never lose the slot); calendar event updated.
+- Admin marks leave on a day with bookings → cascade cancel + notify (above); marking leave twice → idempotent unique.
+- Concurrent "leave" and "book" on same day → unique constraints + version bump keep state consistent.
+- Timezone/DST: store UTC; working hours interpreted in `CLINIC_TZ`; slot math via `zoneinfo` (DST-safe); ISO 8601 everywhere.
+- Prescription frequency parsing ("twice daily", "every 8 hours", "1-0-1", "PRN") → normalized `times_per_day`; unparseable → safe default + flag, no crash.
+- Reminder generation idempotent via unique `(prescription_id, scheduled_at)`; re-runs don't duplicate.
+- Email retries: outbox `dedupe_key` prevents double-send; `dead` after max attempts (visible to admin).
+- Calendar OAuth token expired/revoked → refresh; on failure mark disconnected + surface to user, no 500.
+- Auth: duplicate email → 409; expired/invalid JWT → 401; wrong role → 403; CSRF token missing on form post → 403.
+- Redis unavailable → cache no-op, lock falls back to DB unique index, rate-limit fails open; Celery eager mode still processes tasks.
+- Rate limiting on login/register/booking to blunt brute-force and abuse.
+
+## API surface (JSON; also drives the HTML pages)
+
+- `auth`: `POST /api/auth/{register,login,logout}`, `GET /api/auth/me`
+- `admin` (admin): doctor CRUD, working hours, `POST /api/admin/doctors/{id}/leave`, outbox/dead-letter view
+- `doctors`: `GET /api/doctors?specialisation=`, `GET /api/doctors/{id}`, `GET /api/doctors/{id}/slots?date=` (cached)
+- `appointments` (patient): `POST /hold`, `POST /{id}/symptoms`, `POST /{id}/confirm`, `POST /{id}/cancel`, `POST /{id}/reschedule`, `GET /mine`
+- `visits` (doctor): `GET /schedule`, `GET /appointments/{id}/previsit`, `POST /appointments/{id}/complete`
+- `integrations`: `GET /api/integrations/google/{authorize,callback,status}`
+- `health`: `/healthz`, `/readyz`; interactive API docs at `/docs` (Swagger).
+
+## Frontend (Jinja2 + HTMX)
+
+`/` login/register. **Patient:** dashboard, search doctors, `/patient/book/{doctor_id}` (HTMX slot load → hold → symptom form → pre-visit preview → confirm), `/patient/appointments` (post-visit summary + med schedule). **Doctor:** `/doctor` schedule with pre-visit summaries + urgency badges, `/doctor/visit/{id}` (notes + prescription → generated summary). **Admin:** `/admin` doctors, working hours, leave, dead-letter emails. Clean clinical styling; HTMX for slots/holds/inline summaries.
+
+## Deliverables & docs
+
+- **README.md** — local quickstart (zero-infra) + docker-compose; env table; DB schema; **verbatim LLM prompts**; Gemini key + Google Calendar OAuth setup; API overview + `/docs`; deploy steps (Render/Railway + managed Redis/Postgres).
+- **.env.example** — every key with safe defaults (`EMAIL_BACKEND=console`, `CELERY_TASK_ALWAYS_EAGER=true`, no secrets needed to run).
+- **DESIGN.md** — required **≤800 words**: double-booking prevention, leave conflict handling, slot hold, notification failure handling.
+- **ARCHITECTURE.md** — extensive: component + sequence diagrams (mermaid), data-flow, concurrency proof, caching/invalidation, failure modes & recovery, scaling/capacity, security, observability, trade-offs & alternatives.
+- **docker-compose.yml**, **Dockerfile**, Alembic migrations, `seed.py` (demo-ready), deploy configs.
+
+## Build order
+
+1. Scaffold `backend/`, `requirements.txt`, `config.py`, `database.py`, `.env.example`, logging.
+2. `models.py` (`slots` inventory + `appointments` record + unique `(doctor_id, start_time)`) + Alembic baseline + `schemas.py`.
+3. `security.py` (bcrypt, JWT, cookie/bearer, RBAC, CSRF) + `auth` router.
+4. `infra/` (redis, cache, locks, idempotency, ratelimit) — all degrade gracefully.
+5. `services/booking.py` (slot generation/materialization + cache; hold = Redis lock + CAS + idempotency; confirm/cancel/reschedule CAS; hold-expiry) + `appointments` router.
+6. `admin` + `doctors` routers (CRUD, hours, leave-with-notify, cached search/slots).
+7. `services/llm/*` (Gemini + fallback + factory); wire into symptom + complete flows; `visits` router.
+8. `services/email.py`, `services/calendar.py` (+ Fernet) + `integrations` router.
+9. `celery_app.py` + `tasks/*` + Beat schedule (hold expiry, outbox retry, med reminders, appt reminders); `reminders.py`.
+10. Jinja templates + static (`pages.py`, HTMX flows); `health` router; `/readyz`.
+11. `seed.py`, `tests/`, `Dockerfile`, `docker-compose.yml`, Alembic env.
+12. `README.md`, `DESIGN.md`, `ARCHITECTURE.md`.
+
+## Verification
+
+- **Zero-infra run:** `cd backend && pip install -r requirements.txt && alembic upgrade head && python -m app.seed && uvicorn app.main:app --reload` (SQLite, Celery eager, cache no-op, LLM→fallback, email→console). Open `/`, `/docs`, `/readyz`.
+- **Full stack:** `docker-compose up` → web + worker + beat + redis (+ postgres); verify Celery logs, cache hits, live reminders.
+- **Automated (`pytest`, SQLite):** (a) two holds on one slot → one 201 / one 409 (CAS `rows==1`; deterministic sequential test + a threaded stress variant); (b) idempotency-key replay returns the identical booking; (c) availability excludes `blocked`/`booked` slots and serves from cache on repeat; (d) marking leave `blocks` the day, cancels affected appointments + enqueues emails; (e) pre-visit returns valid `Low/Medium/High` with **no LLM key** (fallback path); (f) patient gets 403 on admin routes; (g) outbox retry marks `dead` after max attempts.
+- **Manual E2E:** admin creates doctor+hours → patient books (hold→symptoms→pre-visit→confirm; console email + outbox row + calendar task) → doctor completes visit (post-visit summary + reminders queued) → admin marks leave (affected patient emailed). With `GEMINI_API_KEY` set → live summaries; SMTP/SendGrid → real email; Google OAuth → real calendar events.

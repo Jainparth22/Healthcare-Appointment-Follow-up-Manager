@@ -1,0 +1,17 @@
+# Keep the build context small and the image clean.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+tests/
+*.db
+*.sqlite3
+.env
+.venv/
+venv/
+.git/
+.gitignore
+Dockerfile
+.dockerignore

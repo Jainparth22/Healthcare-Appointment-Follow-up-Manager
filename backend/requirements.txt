@@ -1,0 +1,61 @@
+# ---- Web framework ----
+# NOTE: uvicorn 0.52 removed the bundled `uvicorn.workers` module, so we run
+# uvicorn directly (`uvicorn app.main:app --workers N`) rather than gunicorn +
+# UvicornWorker. gunicorn is intentionally NOT a dependency for that reason.
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.29
+jinja2>=3.1
+python-multipart>=0.0.9
+
+# ---- Database ----
+SQLAlchemy>=2.0.29,<2.1
+alembic>=1.13
+# Postgres driver for deployment (SQLite is stdlib). psycopg3 bundles libpq in
+# the binary wheel; use URL scheme postgresql+psycopg://. Optional for SQLite-only
+# local dev — pip will still install it, but it is only imported when connecting.
+psycopg[binary]>=3.1
+
+# ---- Config / validation ----
+pydantic>=2.6,<3.0
+pydantic-settings>=2.2
+
+# ---- Auth / crypto ----
+PyJWT>=2.8
+bcrypt>=4.1
+cryptography>=42.0
+
+# ---- Async / scheduled work ----
+redis>=5.0
+celery>=5.3
+
+# ---- LLM (Gemini default, Anthropic optional) ----
+google-genai>=0.3
+anthropic>=0.40
+
+# ---- Google Calendar ----
+google-api-python-client>=2.120
+google-auth-oauthlib>=1.2
+google-auth-httplib2>=0.2
+
+# ---- Email (optional backends) ----
+sendgrid>=6.11
+email-validator==2.3.0
+
+# ---- HTTP client ----
+httpx>=0.27
+
+# ---- Tests ----
+pytest>=8.0
+
+# ---------------------------------------------------------------------------
+# Verified working set (the exact versions this project was built & tested on;
+# ranges above stay flexible for deployment, these are the known-good pins):
+#   fastapi==0.141.1  starlette==1.6.0  uvicorn==0.52.4  Jinja2==3.1.6
+#   SQLAlchemy==2.0.51  alembic==1.18.5  pydantic==2.13.4  pydantic-settings==2.15.0
+#   PyJWT==2.8.0  bcrypt==5.0.0  cryptography==49.0.0  redis==5.0.1  celery==5.3.6
+#   httpx==0.28.1  python-multipart==0.0.32  pytest==9.1.1
+# Optional / lazy-imported (only needed when the feature is enabled):
+#   google-genai (Gemini)  ·  anthropic (fallback LLM provider)
+#   google-api-python-client, google-auth-oauthlib, google-auth-httplib2 (Calendar)
+#   sendgrid (email backend)  ·  psycopg[binary] (Postgres)
+# ---------------------------------------------------------------------------

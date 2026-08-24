@@ -1,0 +1,114 @@
+# Healthcare Appointment & Follow-up Manager — full topology.
+#
+#   docker compose up --build
+#
+# Brings up: postgres, redis, the web app (Jinja+HTMX+API), a Celery worker,
+# and Celery Beat. The web container runs `alembic upgrade head` then seeds the
+# demo data before starting uvicorn, so the clinic is immediately usable at
+# http://localhost:8000 (docs at /docs).
+#
+# Secrets are read from the host environment / a repo-root .env for interpolation
+# (e.g. GEMINI_API_KEY, SECRET_KEY). Everything has a safe default so the stack
+# boots with no configuration — LLM falls back, email prints to the console.
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg://hcv:hcv@db:5432/hcv
+  REDIS_URL: redis://redis:6379/0
+  # Real topology: tasks flow through the broker to the worker (not eager).
+  CELERY_TASK_ALWAYS_EAGER: "false"
+  SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me-in-production}
+  BASE_URL: ${BASE_URL:-http://localhost:8000}
+  CLINIC_TZ: ${CLINIC_TZ:-Asia/Kolkata}
+  ENV: ${ENV:-development}
+  # ---- LLM (optional; falls back deterministically when unset) ----
+  LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  # ---- Email (console prints to logs; set smtp/sendgrid for real delivery) ----
+  EMAIL_BACKEND: ${EMAIL_BACKEND:-console}
+  EMAIL_FROM: ${EMAIL_FROM:-clinic@example.com}
+  SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  # ---- Google Calendar (optional; no-op when unset) ----
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/api/integrations/google/callback}
+  FERNET_KEY: ${FERNET_KEY:-}
+
+x-app-build: &app-build
+  build:
+    context: ./backend
+  image: hcv-app:latest
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hcv
+      POSTGRES_PASSWORD: hcv
+      POSTGRES_DB: hcv
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hcv -d hcv"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    <<: *app-build
+    environment:
+      <<: *app-env
+    # Migrate → seed demo data → serve. Seed is idempotent, so restarts are safe.
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --proxy-headers"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    <<: *app-build
+    environment:
+      <<: *app-env
+    command: celery -A app.celery_app:celery_app worker --loglevel=info --concurrency=4
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  beat:
+    <<: *app-build
+    environment:
+      <<: *app-env
+    command: celery -A app.celery_app:celery_app beat --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
