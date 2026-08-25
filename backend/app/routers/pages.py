@@ -79,6 +79,11 @@ def index(request: Request, db: Session = Depends(get_db)):
     user = get_optional_user(request, db)
     if user is not None:
         return RedirectResponse(_home_for(user.role), status_code=303)
+    return render(request, "landing.html")
+
+
+@router.get("/login", response_class=HTMLResponse)
+def login_page(request: Request):
     return render(request, "login.html")
 
 

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}{{ app_name }}{% endblock %}
+{% block page %}landing{% endblock %}
+{% block content %}
+<!-- ================= NAV ================= -->
+<nav class="lp-nav">
+  <a class="lp-brand" href="/"><span class="lp-logo">✚</span> CityClinic</a>
+  <div class="lp-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#patients">For Patients</a>
+    <a href="#doctors">For Doctors</a>
+    <a href="#about">About</a>
+  </div>
+  <div class="lp-nav-actions">
+    <a class="lp-signin" href="/login">Sign in</a>
+    <a class="lp-cta" href="/login">Book an Appointment →</a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="lp-hero">
+  <div class="lp-hero-left">
+    <span class="lp-eyebrow">Healthcare Appointment &amp; Follow-up Manager</span>
+    <h1>Healthcare,<br>without the<br><span class="lp-accent">waiting.</span></h1>
+    <p class="lp-sub">CityClinic makes it easier for patients to find doctors and manage
+    appointments, while giving doctors a clear view of their schedules and visits —
+    in one connected place.</p>
+    <div class="lp-hero-actions">
+      <a class="lp-cta" href="/login">Book an Appointment →</a>
+      <a class="lp-ghost" href="#how">See how it works</a>
+    </div>
+    <div class="lp-audience">
+      <span>● Patients</span><span>● Doctors</span><span>● Administrators</span>
+    </div>
+  </div>
+
+  <div class="lp-hero-right">
+    <div class="lp-float lp-float-1"><span class="tick ok">✓</span><div><strong>Appointment confirmed</strong><small>Just now</small></div></div>
+    <div class="lp-mock">
+      <div class="lp-mock-head"><span>MY APPOINTMENTS</span><span class="lp-mock-tag">PATIENT</span></div>
+      <div class="lp-mock-card">
+        <div class="lp-mock-doc">
+          <span class="lp-avatar">AR</span>
+          <div><strong>Dr. Anita Rao</strong><small>Cardiology</small></div>
+          <span class="lp-badge-booked">● BOOKED</span>
+        </div>
+        <div class="lp-mock-grid">
+          <div><label>DATE</label><b>Wed, Aug 26</b></div>
+          <div><label>TIME</label><b>11:00 AM</b></div>
+        </div>
+        <div class="lp-mock-sym"><label>SYMPTOMS</label><b>Chest tightness, mild shortness of breath</b></div>
+      </div>
+    </div>
+    <div class="lp-float lp-float-2"><span class="tick ok">✓</span><div><strong>Follow-up reminder</strong><small>In 3 days</small></div></div>
+    <div class="lp-float lp-float-3"><span class="tick warn">✓</span><div><strong>Next appointment — 11:00 AM</strong><small>Wed, Aug 26</small></div></div>
+  </div>
+</header>
+
+<!-- ================= THREE EXPERIENCES ================= -->
+<section class="lp-section lp-tint" id="about">
+  <div class="lp-wrap">
+    <h2>One platform. Three experiences.</h2>
+    <div class="lp-grid-3">
+      <div class="lp-card"><span class="lp-kicker">Patients</span>
+        <p>Find doctors, book appointments, and manage every visit in one place.</p></div>
+      <div class="lp-card"><span class="lp-kicker">Doctors</span>
+        <p>Manage schedules, upcoming appointments, and patient visits with clarity.</p></div>
+      <div class="lp-card"><span class="lp-kicker">Administrators</span>
+        <p>Oversee doctors, appointments, and platform activity across the system.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section class="lp-section" id="features">
+  <div class="lp-wrap">
+    <span class="lp-kicker">Features</span>
+    <h2>Everything the visit needs —<br>and nothing it doesn't.</h2>
+    <div class="lp-grid-3">
+      <div class="lp-card"><span class="lp-ico">🗓</span><h3>Smart appointment booking</h3><p>Patients find doctors and book available slots — double-booking is impossible by design.</p></div>
+      <div class="lp-card"><span class="lp-ico">⏱</span><h3>Doctor scheduling</h3><p>Working hours, slot duration and leave days managed by the clinic, always in sync.</p></div>
+      <div class="lp-card"><span class="lp-ico">✏️</span><h3>Appointment management</h3><p>View, reschedule, or cancel without back-and-forth.</p></div>
+      <div class="lp-card"><span class="lp-ico">👥</span><h3>Patient &amp; doctor portals</h3><p>Role-based experiences, including admin oversight of the whole clinic.</p></div>
+      <div class="lp-card"><span class="lp-ico">🔔</span><h3>Centralized notifications</h3><p>Confirmations, reminders, cancellations — reliable email delivery to both patient and doctor.</p></div>
+      <div class="lp-card"><span class="lp-ico">✦</span><span class="lp-chip">LIVE</span><h3>AI pre-visit summaries</h3><p>Symptoms become an urgency-rated summary with suggested questions before the doctor even opens the chart.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section class="lp-section lp-tint" id="how">
+  <div class="lp-wrap lp-center">
+    <span class="lp-kicker">How it works</span>
+    <h2>Three steps to organized care.</h2>
+    <div class="lp-steps">
+      <div class="lp-step"><span class="lp-num">01</span><h3>Find your doctor</h3><p>Search doctors and check availability.</p></div>
+      <div class="lp-step"><span class="lp-num">02</span><h3>Book your appointment</h3><p>Hold a slot, describe symptoms, confirm your visit.</p></div>
+      <div class="lp-step"><span class="lp-num">03</span><h3>Manage your care</h3><p>Track appointments, visit summaries and medication reminders.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOR PATIENTS / DOCTORS ================= -->
+<section class="lp-section" id="patients">
+  <div class="lp-wrap">
+    <span class="lp-kicker">The product</span>
+    <h2>Built for both sides of the appointment.</h2>
+    <div class="lp-split">
+      <div class="lp-panel" id="doctors-panel">
+        <span class="lp-kicker">Patients</span>
+        <div class="lp-mock">
+          <div class="lp-mock-head"><span>MY APPOINTMENTS</span><span class="lp-mock-tag">PATIENT</span></div>
+          <div class="lp-mock-card">
+            <div class="lp-mock-doc"><span class="lp-avatar">AR</span><div><strong>Dr. Anita Rao</strong><small>Cardiology</small></div><span class="lp-badge-booked">● BOOKED</span></div>
+            <div class="lp-mock-grid"><div><label>DATE</label><b>Wed, Aug 26</b></div><div><label>TIME</label><b>11:00 AM</b></div></div>
+            <div class="lp-mock-sym"><label>SYMPTOMS</label><b>Fever, mild headache</b></div>
+          </div>
+        </div>
+        <ul class="lp-checks">
+          <li>Find doctors &amp; check availability</li>
+          <li>Book / reschedule / cancel</li>
+          <li>AI pre-visit summary with urgency</li>
+          <li>Post-visit summary &amp; medication schedule</li>
+          <li>Google Calendar sync</li>
+        </ul>
+      </div>
+      <div class="lp-panel" id="doctors">
+        <span class="lp-kicker">Doctors</span>
+        <div class="lp-mock">
+          <div class="lp-mock-head"><span>Doctor Portal</span><span class="lp-mock-tag">TODAY</span></div>
+          <div class="lp-mock-card">
+            <p class="lp-welcome">Welcome, Dr. Rao</p>
+            <div class="lp-mock-row"><span class="lp-avatar sm">P1</span><div><b>patient@clinic.test</b><small>Wed, Aug 26 · 11:00 AM</small></div><span class="lp-badge-booked">● BOOKED</span></div>
+            <div class="lp-mock-row"><span class="lp-avatar sm">P2</span><div><b>a.morgan@mail.dev</b><small>Wed, Aug 26 · 11:30 AM</small></div><span class="lp-badge-pending">● HOLDING</span></div>
+            <div class="lp-mock-row"><span class="lp-avatar sm">P3</span><div><b>s.kaur@mail.dev</b><small>Wed, Aug 26 · 12:00 PM</small></div><span class="lp-badge-booked">● BOOKED</span></div>
+          </div>
+        </div>
+        <ul class="lp-checks">
+          <li>View daily schedule with urgency badges</li>
+          <li>Review pre-visit summaries</li>
+          <li>Complete visits with notes &amp; prescriptions</li>
+          <li>Auto-generated patient-friendly summaries</li>
+          <li>Medication reminders, scheduled automatically</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AI BAND ================= -->
+<section class="lp-dark">
+  <div class="lp-wrap lp-dark-grid">
+    <div>
+      <span class="lp-kicker light">Smart care · Included</span>
+      <h2>Better prepared for every visit.</h2>
+      <p class="lp-dark-sub">Symptoms submitted before the visit become a structured summary —
+      urgency level, chief complaint and suggested questions — so doctors start with clearer context.</p>
+    </div>
+    <div class="lp-dark-card">
+      <span class="lp-kicker light">Pre-visit summary</span>
+      <div class="lp-dark-row"><label>Chief concern</label><b>Fever, mild headache — 2 days</b></div>
+      <div class="lp-dark-row"><label>Urgency</label><b><span class="urgency Medium">Medium</span></b></div>
+      <div class="lp-dark-row"><label>For the doctor</label><b>Wants to review symptoms and next steps</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="lp-section">
+  <div class="lp-wrap">
+    <div class="lp-cta-band">
+      <h2>Ready to make your next appointment simpler?</h2>
+      <p>Find the right doctor, choose a convenient time, and keep your appointments organized.</p>
+      <div class="lp-hero-actions lp-center-actions">
+        <a class="lp-cta" href="/login">Book an Appointment →</a>
+        <a class="lp-ghost" href="/login">Sign in</a>
+      </div>
+      <p class="lp-foot-meta">Role-based access · Appointment management · Patient &amp; doctor portals</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="lp-footer">
+  <div class="lp-wrap lp-footer-row">
+    <div><a class="lp-brand" href="/"><span class="lp-logo">✚</span> CityClinic</a>
+      <p class="lp-footer-sub">Healthcare Appointment &amp; Follow-up Manager</p></div>
+    <div class="lp-links">
+      <a href="#features">Features</a><a href="#how">How it works</a>
+      <a href="/privacy">Privacy</a><a href="/login">Sign in</a>
+    </div>
+  </div>
+  <div class="lp-wrap lp-copy">© 2026 CityClinic</div>
+</footer>
+{% endblock %}
