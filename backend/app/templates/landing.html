@@ -2,6 +2,11 @@
 {% block title %}{{ app_name }}{% endblock %}
 {% block page %}landing{% endblock %}
 {% block content %}
+<style>
+  .topbar{display:none !important}
+  .lp-nav{position:sticky;top:0;z-index:40}
+  .container{margin-top:0 !important;padding-top:0 !important;max-width:none !important;padding-left:0 !important;padding-right:0 !important}
+</style>
 <!-- NAV -->
 <nav class="lp-nav">
   <a class="lp-brand" href="/"><img src="/static/logo.png" alt="CityClinic" width="30" height="30" style="border-radius:8px">CityClinic</a>
