@@ -1,21 +1,25 @@
-{% extends "base.html" %}
+{% extends "base_app.html" %}
 {% block page %}doctor{% endblock %}
+{% block nav %}
+<a href="/doctor" class="active">◉ Schedule</a>
+<a href="/doctor" style="opacity:.6">📅 My appointments</a>
+{% endblock %}
 {% block content %}
-<section class="card">
+<section class="ov-card">
   <div class="row space-between">
-    <h2>Schedule &mdash; holding &amp; confirmed visits</h2>
+    <h2>Schedule — holding &amp; confirmed visits</h2>
     <button class="btn-ghost" id="refresh-schedule" type="button">Refresh</button>
   </div>
-  <div id="schedule" class="list"></div>
+  <div id="schedule" class="list" style="margin-top:14px"></div>
 </section>
 
-<section class="card">
+<section class="ov-card" style="margin-top:18px">
   <div class="row space-between">
     <div>
-      <h2 style="margin-bottom:2px">Google Calendar</h2>
+      <h3 style="margin:0">Google Calendar</h3>
       <span class="muted">Confirmed visits are mirrored to your calendar.</span>
     </div>
-    <span id="google-status" class="muted">&hellip;</span>
+    <span id="google-status" class="muted">…</span>
   </div>
 </section>
 {% endblock %}

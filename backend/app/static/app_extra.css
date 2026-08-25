@@ -14,7 +14,8 @@
 .app-signout{width:100%;text-align:left;background:none;border:none;color:var(--ink-light);font-size:.86rem;cursor:pointer;padding:6px 8px}
 .app-signout:hover{color:var(--danger)}
 .app-main{padding:0}
-.app-topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;background:#f6f8f9;border-bottom:1px solid var(--line);font-weight:600;color:var(--ink-light);font-size:.9rem}
+.app-topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;background:rgba(233,221,201,0.72);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-weight:600;color:var(--ink-light);font-size:.9rem}
+.app-main{background:var(--bg)}
 .app-content{padding:28px;max-width:1200px}
 .ov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 24px}
 @media(max-width:900px){.ov-grid{grid-template-columns:1fr 1fr}}
