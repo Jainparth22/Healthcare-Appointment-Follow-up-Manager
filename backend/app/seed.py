@@ -113,7 +113,7 @@ def seed() -> None:
             db,
             email=PATIENT_EMAIL,
             password=PATIENT_PASSWORD,
-            full_name="Sam Patient",
+            full_name="Aarav Sharma",
             role=ROLE_PATIENT,
             phone="+91-99999-00002",
         )
