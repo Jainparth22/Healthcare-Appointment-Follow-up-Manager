@@ -1,0 +1,16 @@
+{% extends "base_app.html" %}
+{% block page %}p-calendar{% endblock %}
+{% block content %}
+<h1>Google Calendar</h1>
+<p class="muted">Automatically keep your appointments synchronized with Google Calendar.</p>
+<div class="ov-card" style="max-width:760px;margin-top:18px;cursor:default">
+  <div class="row space-between">
+    <div style="max-width:480px">
+      <strong><span id="gcal-dot">●</span> <span id="gcal-title">Checking connection…</span></strong>
+      <p class="muted" id="gcal-desc" style="margin:8px 0 0">Synchronization is automatic: new bookings are added to your
+      Google Calendar, reschedules update the event and cancellations remove it.</p>
+    </div>
+    <span id="google-status"></span>
+  </div>
+</div>
+{% endblock %}

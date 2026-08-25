@@ -156,7 +156,39 @@ def patient_home(request: Request, db: Session = Depends(get_db)):
     user, redirect = _guard(request, db, ROLE_PATIENT)
     if redirect:
         return redirect
-    return render(request, "patient.html", user=user)
+    return render(request, "p_overview.html", user=user, page_title="Patient portal")
+
+
+@router.get("/patient/doctors", response_class=HTMLResponse)
+def patient_doctors(request: Request, db: Session = Depends(get_db)):
+    user, redirect = _guard(request, db, ROLE_PATIENT)
+    if redirect:
+        return redirect
+    return render(request, "p_doctors.html", user=user, page_title="Find a doctor")
+
+
+@router.get("/patient/appointments", response_class=HTMLResponse)
+def patient_appointments(request: Request, db: Session = Depends(get_db)):
+    user, redirect = _guard(request, db, ROLE_PATIENT)
+    if redirect:
+        return redirect
+    return render(request, "p_appointments.html", user=user, page_title="My appointments")
+
+
+@router.get("/patient/notifications", response_class=HTMLResponse)
+def patient_notifications(request: Request, db: Session = Depends(get_db)):
+    user, redirect = _guard(request, db, ROLE_PATIENT)
+    if redirect:
+        return redirect
+    return render(request, "p_notifications.html", user=user, page_title="Notifications")
+
+
+@router.get("/patient/calendar", response_class=HTMLResponse)
+def patient_calendar(request: Request, db: Session = Depends(get_db)):
+    user, redirect = _guard(request, db, ROLE_PATIENT)
+    if redirect:
+        return redirect
+    return render(request, "p_calendar.html", user=user, page_title="Google Calendar")
 
 
 @router.get("/patient/book/{doctor_id}", response_class=HTMLResponse)

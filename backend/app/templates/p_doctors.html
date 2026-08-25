@@ -1,0 +1,10 @@
+{% extends "base_app.html" %}
+{% block page %}p-doctors{% endblock %}
+{% block content %}
+<h1>Find a doctor</h1>
+<p class="muted">Browse active specialists and check their availability.</p>
+<label style="max-width:640px">Filter by specialisation
+<div class="row"><input id="doc-search" placeholder="e.g. Cardiology">
+<button class="btn" id="doc-search-btn" type="button">Search</button></div></label>
+<div id="doctor-list" class="list" style="margin-top:18px;max-width:640px"></div>
+{% endblock %}

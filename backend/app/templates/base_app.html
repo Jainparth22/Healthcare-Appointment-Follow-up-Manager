@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ page_title or app_name }}{% endblock %} · {{ app_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+</head>
+<body data-page="{% block page %}{% endblock %}">
+<div class="app-shell">
+  <aside class="app-side">
+    <a class="app-brand" href="/patient"><span class="lp-logo">✚</span>
+      <span><strong>CityClinic</strong><small>Appointment Manager</small></span></a>
+    <nav class="app-nav">
+      {% block nav %}
+      <a href="/patient" class="{{ 'active' if nav == 'overview' }}">⌂ Overview</a>
+      <a href="/patient/doctors" class="{{ 'active' if nav == 'doctors' }}">👥 Find a doctor</a>
+      <a href="/patient/appointments" class="{{ 'active' if nav == 'appointments' }}">🗓 My appointments</a>
+      <a href="/patient/notifications" class="{{ 'active' if nav == 'notifications' }}">🔔 Notifications</a>
+      <a href="/patient/calendar" class="{{ 'active' if nav == 'calendar' }}">📅 Google Calendar</a>
+      {% endblock %}
+    </nav>
+    <div class="app-side-foot">
+      <div class="app-user"><span class="lp-avatar sm">{{ user.full_name[0]|upper if user else 'U' }}</span>
+        <span><strong>{{ user.email if user else '' }}</strong><small>{{ user.role|capitalize if user else '' }}</small></span></div>
+      <form method="post" action="/logout" class="inline"><input type="hidden" name="csrf_token" value="{{ request.cookies.get('hcv_csrf','') }}">
+        <button class="app-signout" type="submit">Sign out</button></form>
+    </div>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <span>{{ page_title or '' }}</span>
+      <span class="muted">{% block topdate %}{% endblock %}</span>
+    </header>
+    <main class="app-content">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+<div id="toast" class="toast" hidden></div>
+<script src="{{ asset_url('app.js') }}" defer></script>
+</body>
+</html>

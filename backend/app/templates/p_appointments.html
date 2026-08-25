@@ -1,0 +1,8 @@
+{% extends "base_app.html" %}
+{% block page %}p-appointments{% endblock %}
+{% block content %}
+<div class="row space-between"><div><h1>My appointments</h1>
+<p class="muted">Newest first. Expand an appointment for details and actions.</p></div>
+<button class="btn-ghost" id="refresh-appts" type="button">Refresh</button></div>
+<div id="appt-list" class="list" style="margin-top:18px;max-width:820px"></div>
+{% endblock %}

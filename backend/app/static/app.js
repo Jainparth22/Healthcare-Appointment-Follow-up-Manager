@@ -678,8 +678,96 @@ function initAdmin() {
   loadOutbox();
 }
 
+// ---------------------------------------------------------------- PATIENT APP (sidebar pages)
+function notifCard(n) {
+  const statusMap = { sent: ["ok", "SENT"], pending: ["pending", "PENDING"], failed: ["fail", "FAILED"], dead: ["fail", "FAILED PERMANENTLY"] };
+  const [cls, label] = statusMap[n.status] || ["pending", n.status.toUpperCase()];
+  const kindMap = { booking_confirmed: "Booking confirmation", booking_confirmed_doctor: "Booking confirmation (doctor)",
+    cancellation: "Cancellation", cancellation_doctor: "Cancellation (doctor)", reschedule: "Reschedule",
+    postvisit_summary: "Visit summary", appointment_reminder: "Reminder", medication_reminder: "Medication reminder" };
+  return `<div class="item notif-item" data-status="${esc(n.status)}" data-kind="${esc(n.kind)}">
+    <div class="row space-between"><strong>${esc(n.subject)}</strong><span class="nbadge ${cls}">${label}</span></div>
+    <p class="muted" style="margin:6px 0 0">${esc(n.preview)}…</p>
+    <div class="nmeta">${esc(kindMap[n.kind] || n.kind)} · ${fmtDateTime(n.created_at)}</div></div>`;
+}
+
+async function loadNotifications() {
+  const list = document.getElementById("notif-list");
+  if (!list) return;
+  const st = document.getElementById("notif-status").value;
+  const kd = document.getElementById("notif-kind").value;
+  list.innerHTML = '<p class="muted">Loading…</p>';
+  const r = await api("GET", "/api/appointments/notifications");
+  if (!r.ok) { list.innerHTML = `<p class="alert error">${esc(errText(r))}</p>`; return; }
+  let rows = r.data;
+  if (st) rows = rows.filter(n => n.status === st);
+  if (kd) rows = rows.filter(n => n.kind === kd || n.kind === kd + "_doctor");
+  if (!rows.length) { list.innerHTML = '<p class="muted">No notifications yet.</p>'; return; }
+  list.innerHTML = rows.map(notifCard).join("");
+}
+
+function initPNotifications() {
+  document.getElementById("notif-refresh").onclick = loadNotifications;
+  document.getElementById("notif-status").onchange = loadNotifications;
+  document.getElementById("notif-kind").onchange = loadNotifications;
+  loadNotifications();
+}
+
+function initPDoctors() {
+  document.getElementById("doc-search-btn").onclick = searchDoctors;
+  document.getElementById("doc-search").addEventListener("keydown", e => { if (e.key === "Enter") searchDoctors(); });
+  searchDoctors();
+}
+
+function initPAppointments() {
+  document.getElementById("refresh-appts").onclick = loadAppointments;
+  loadAppointments();
+}
+
+function initPCalendar() {
+  initGoogle();
+  const dot = document.getElementById("gcal-dot");
+  const title = document.getElementById("gcal-title");
+  const poll = setInterval(async () => {
+    const r = await api("GET", "/api/integrations/google/status");
+    if (!r.ok) return;
+    if (!r.data.configured) { dot.style.color = "var(--muted)"; title.textContent = "Not configured on this server"; clearInterval(poll); return; }
+    if (r.data.connected) { dot.style.color = "var(--ok)"; title.textContent = "Google Calendar connected"; clearInterval(poll); }
+    else { dot.style.color = "var(--warn)"; title.textContent = "Not connected yet"; }
+  }, 800);
+  setTimeout(() => clearInterval(poll), 8000);
+}
+
+async function initPOverview() {
+  const next = document.getElementById("ov-next");
+  const recent = document.getElementById("ov-recent");
+  const notifs = document.getElementById("ov-notifs");
+  document.getElementById("ov-refresh").onclick = initPOverview;
+  const [ra, rn] = await Promise.all([api("GET", "/api/appointments/mine"), api("GET", "/api/appointments/notifications")]);
+  if (ra.ok) {
+    const upcoming = ra.data.filter(a => ["holding", "confirmed"].includes(a.status) && a.scheduled_start)
+      .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+    next.innerHTML = upcoming.length
+      ? `<div class="item"><div class="row space-between"><div><strong>${esc(upcoming[0].doctor_name || "Doctor")}</strong>
+         <div class="meta">${fmtDateTime(upcoming[0].scheduled_start)}</div></div>
+         <span class="badge ${esc(upcoming[0].status)}">${esc(upcoming[0].status)}</span></div></div>
+         <a class="btn-ghost" style="margin-top:10px;display:inline-flex" href="/patient/appointments">View appointment</a>`
+      : '<p class="muted">No upcoming appointments. <a href="/patient/doctors">Find a doctor</a></p>';
+    const rec = ra.data.slice(0, 3);
+    recent.innerHTML = rec.length ? rec.map(a => `<div class="item"><div class="row space-between">
+      <div><strong>${esc(a.doctor_name || "Doctor")}</strong><div class="meta">${fmtDateTime(a.scheduled_start)}</div></div>
+      <span class="badge ${esc(a.status)}">${esc(a.status)}</span></div></div>`).join("")
+      : '<p class="muted">No appointments yet.</p>';
+  }
+  if (rn.ok) {
+    notifs.innerHTML = rn.data.length ? rn.data.slice(0, 3).map(notifCard).join("") : '<p class="muted">Nothing yet.</p>';
+  }
+}
+
 // ---------------------------------------------------------------- router
 document.addEventListener("DOMContentLoaded", () => {
   const page = document.body.dataset.page;
-  ({ login: initLogin, patient: initPatient, book: initBook, doctor: initDoctor, admin: initAdmin }[page] || (() => {}))();
+  ({ login: initLogin, patient: initPatient, book: initBook, doctor: initDoctor, admin: initAdmin,
+     "p-overview": initPOverview, "p-doctors": initPDoctors, "p-appointments": initPAppointments,
+     "p-notifications": initPNotifications, "p-calendar": initPCalendar }[page] || (() => {}))();
 });

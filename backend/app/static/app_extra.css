@@ -1,0 +1,32 @@
+/* ============ Patient App — sidebar layout ============ */
+.app-shell{display:grid;grid-template-columns:256px 1fr;min-height:100vh}
+.app-side{display:flex;flex-direction:column;background:#fff;border-right:1px solid var(--line);padding:22px 16px 14px;position:sticky;top:0;height:100vh}
+.app-brand{display:flex;gap:10px;align-items:center;text-decoration:none;color:var(--forest);font-family:Outfit,sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:30px}
+.app-brand small{font-family:Inter,sans-serif;font-size:.72rem;color:var(--muted);font-weight:500;letter-spacing:.02em;display:block}
+.app-nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.app-nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;color:var(--ink-light);text-decoration:none;font-weight:500;font-size:.88rem;transition:all .15s}
+.app-nav a:hover{background:var(--bg-accent);color:var(--forest)}
+.app-nav a.active{background:var(--sage-bg);color:#173F3A;font-weight:600;border:1px solid var(--line)}
+.app-side-foot{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.app-user{display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--bg-accent);border-radius:10px;margin-bottom:8px}
+.app-user strong{font-size:.78rem;display:block}
+.app-user small{font-size:.68rem;color:var(--muted)}
+.app-signout{width:100%;text-align:left;background:none;border:none;color:var(--ink-light);font-size:.86rem;cursor:pointer;padding:6px 8px}
+.app-signout:hover{color:var(--danger)}
+.app-main{padding:0}
+.app-topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;background:#f6f8f9;border-bottom:1px solid var(--line);font-weight:600;color:var(--ink-light);font-size:.9rem}
+.app-content{padding:28px;max-width:1200px}
+.ov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 24px}
+@media(max-width:900px){.ov-grid{grid-template-columns:1fr 1fr}}
+.ov-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s}
+.ov-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.ov-card small{color:var(--muted);font-size:.86rem;display:block;margin-top:4px}
+.ov-cols{display:grid;grid-template-columns:1.3fr .9fr;gap:18px;margin-top:10px}
+@media(max-width:900px){.ov-cols{grid-template-columns:1fr}}
+.nmeta{font-family:ui-monospace,monospace;font-size:.68rem;letter-spacing:.06em;color:var(--muted);margin-top:4px}
+.notif-item{border-radius:14px}
+.nbadge{display:inline-flex;padding:3px 8px;border-radius:999px;font-family:ui-monospace,monospace;font-size:.62rem;font-weight:700}
+.nbadge.ok{background:var(--ok-bg);color:var(--ok)}
+.nbadge.fail{background:var(--danger-bg);color:var(--danger)}
+.nbadge.pending{background:var(--warn-bg);color:var(--warn)}
+@media(max-width:900px){.app-shell{grid-template-columns:1fr}.app-side{position:static;height:auto}}

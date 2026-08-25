@@ -1,0 +1,12 @@
+{% extends "base_app.html" %}
+{% block page %}p-notifications{% endblock %}
+{% block content %}
+<div class="row space-between"><div><h1>Notifications</h1>
+<p class="muted">Everything the system has sent you, newest first.</p></div>
+<button class="btn-ghost" id="notif-refresh" type="button">Refresh</button></div>
+<div class="row" style="margin:16px 0">
+  <select id="notif-status" style="max-width:200px"><option value="">All statuses</option><option value="sent">Sent</option><option value="pending">Pending</option><option value="failed">Failed</option><option value="dead">Failed permanently</option></select>
+  <select id="notif-kind" style="max-width:240px"><option value="">All types</option><option value="booking_confirmed">Booking confirmation</option><option value="cancellation">Cancellation</option><option value="reschedule">Reschedule</option><option value="postvisit_summary">Visit summary</option><option value="appointment_reminder">Reminder</option></select>
+</div>
+<div id="notif-list" class="list" style="max-width:820px"></div>
+{% endblock %}

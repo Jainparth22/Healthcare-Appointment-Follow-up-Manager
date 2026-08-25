@@ -1,0 +1,25 @@
+{% extends "base_app.html" %}
+{% block page %}p-overview{% endblock %}
+{% block content %}
+<div class="row space-between"><div><h1>Welcome, {{ user.full_name.split(' ')[0] }}</h1>
+<p class="muted">Manage your appointments and stay on top of your care.</p></div>
+<button class="btn-ghost" id="ov-refresh" type="button">Refresh</button></div>
+<div class="ov-grid">
+  <a class="ov-card" href="/patient/doctors"><strong>Find a doctor</strong><small>Browse specialists and live availability</small></a>
+  <a class="ov-card" href="/patient/appointments"><strong>My appointments</strong><small>Review, reschedule or cancel visits</small></a>
+  <a class="ov-card" href="/patient/notifications"><strong>Notifications</strong><small>Confirmations and reminders</small></a>
+  <a class="ov-card" href="/patient/calendar"><strong>Google Calendar</strong><small>Keep visits in sync automatically</small></a>
+</div>
+<div class="ov-cols">
+  <section>
+    <h3>Next appointment</h3>
+    <div id="ov-next"></div>
+    <h3 style="margin-top:22px">Recent appointments <a class="lp-kicker" href="/patient/appointments" style="float:right">View all</a></h3>
+    <div id="ov-recent" class="list"></div>
+  </section>
+  <section>
+    <div class="row space-between"><h3>Recent notifications</h3><a class="lp-kicker" href="/patient/notifications">Open inbox</a></div>
+    <div id="ov-notifs" class="list"></div>
+  </section>
+</div>
+{% endblock %}

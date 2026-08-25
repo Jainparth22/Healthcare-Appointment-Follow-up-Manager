@@ -167,6 +167,33 @@ def reschedule(
     return JSONResponse(body, status_code=200)
 
 
+@router.get("/notifications")
+def my_notifications(
+    patient: User = Depends(require_role(ROLE_PATIENT)),
+    db: Session = Depends(get_db),
+):
+    """Everything the outbox has sent to this patient, newest first."""
+    from ..models import EmailOutbox
+
+    rows = db.scalars(
+        select(EmailOutbox)
+        .where(EmailOutbox.to_email == patient.email)
+        .order_by(EmailOutbox.created_at.desc())
+        .limit(50)
+    ).all()
+    return [
+        {
+            "id": r.id,
+            "subject": r.subject,
+            "preview": (r.body_text or "")[:160],
+            "kind": r.kind,
+            "status": r.status,
+            "created_at": r.created_at.isoformat(),
+        }
+        for r in rows
+    ]
+
+
 @router.get("/mine")
 def my_appointments(
     patient: User = Depends(require_role(ROLE_PATIENT)),
