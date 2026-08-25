@@ -176,3 +176,14 @@ def admin_home(request: Request, db: Session = Depends(get_db)):
     if redirect:
         return redirect
     return render(request, "admin.html", user=user)
+
+
+# --------------------------------------------------------------------------
+# Legal pages (public, no auth) — required for Google OAuth consent publishing
+# --------------------------------------------------------------------------
+@router.get("/privacy", response_class=HTMLResponse)
+def privacy(request: Request):
+    import datetime as _dt
+
+    return render(request, "legal.html", today=_dt.date.today().isoformat(),
+                  contact_email=settings.EMAIL_FROM)

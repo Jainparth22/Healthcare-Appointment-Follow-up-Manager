@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Privacy &amp; Terms — {{ app_name }}{% endblock %}
+{% block page %}legal{% endblock %}
+{% block content %}
+<div class="card" style="max-width:760px">
+  <h1>Privacy Policy</h1>
+  <p class="muted">Last updated: {{ today }}</p>
+
+  <p>{{ app_name }} ("the App", "we") provides appointment booking, AI-assisted visit
+  summaries, and medication reminders for clinic patients and doctors. This policy explains
+  what we collect and how it is used.</p>
+
+  <h3>1. Data we collect</h3>
+  <ul class="tight">
+    <li><strong>Account data:</strong> name, email, phone (optional), and a securely hashed password.</li>
+    <li><strong>Appointment data:</strong> chosen slots, symptoms you submit, doctor notes, prescriptions, and reminder schedules.</li>
+    <li><strong>AI summaries:</strong> symptoms and doctor notes are sent to a third-party LLM provider (Google Gemini) to generate pre-visit and post-visit summaries. The prompt and output are stored for auditability.</li>
+    <li><strong>Google Calendar:</strong> if you connect your calendar, we store an OAuth refresh token <em>encrypted at rest</em> solely to create/update/delete event entries for your appointments. Disconnecting removes access.</li>
+    <li><strong>Email:</strong> confirmations, cancellations, reschedules, visit summaries, and reminders are delivered to the email address on your account.</li>
+  </ul>
+
+  <h3>2. How we use data</h3>
+  <ul class="tight">
+    <li>Operate the booking, reminder, and notification features.</li>
+    <li>Generate the AI summaries requested by patients and doctors.</li>
+    <li>Sync appointments to calendars you explicitly connect.</li>
+  </ul>
+  <p>We do not sell your data and do not use it for advertising.</p>
+
+  <h3>3. Your choices</h3>
+  <ul class="tight">
+    <li>Disconnect Google Calendar at any time from your dashboard.</li>
+    <li>Cancel appointments from the patient portal.</li>
+    <li>Contact the clinic administrator to request deletion of your account and associated records.</li>
+  </ul>
+
+  <h3>4. Security</h3>
+  <p>Passwords are hashed with bcrypt; calendar tokens are encrypted (Fernet); all traffic is
+  served over HTTPS. Access is role-based (patient / doctor / admin).</p>
+
+  <hr style="border:none;border-top:1px solid var(--line);margin:22px 0" id="tos">
+  <h1>Terms of Service</h1>
+  <p class="muted">Last updated: {{ today }}</p>
+
+  <p>By using {{ app_name }} you agree to these terms.</p>
+
+  <h3>1. Medical disclaimer</h3>
+  <p>The App supports scheduling and communication. AI-generated summaries are
+  <strong>informational aids, not medical advice or a diagnosis</strong>. Always follow the
+  guidance of your treating doctor. In an emergency, contact local emergency services.</p>
+
+  <h3>2. Accounts</h3>
+  <ul class="tight">
+    <li>Provide accurate registration details and keep credentials confidential.</li>
+    <li>Patient accounts are self-registered; doctor and admin accounts are provisioned by the clinic administrator.</li>
+  </ul>
+
+  <h3>3. Bookings</h3>
+  <ul class="tight">
+    <li>A held slot is reserved for a limited window and expires automatically if the booking is not confirmed.</li>
+    <li>The clinic may cancel appointments (e.g., doctor leave) with notice via email and calendar updates.</li>
+  </ul>
+
+  <h3>4. Availability &amp; changes</h3>
+  <p>The service is provided "as is". We may modify or discontinue features; external
+  dependencies (email providers, Google Calendar, LLM services) may occasionally be
+  unavailable, in which case the App degrades gracefully.</p>
+
+  <h3>5. Contact</h3>
+  <p>For privacy requests or questions, contact the clinic administrator at
+  <strong>{{ contact_email }}</strong>.</p>
+
+  <div style="margin-top:18px"><a href="/" class="back">&larr; Back</a></div>
+</div>
+{% endblock %}
