@@ -272,6 +272,56 @@ HCV/
 
 ---
 
+## 🚀 Why This Project Stands Out (For Recruiters)
+
+I'm **Parth Jain** — CS undergrad @ VIT Bhopal. I built this project to demonstrate that I don't just write "happy path" code; I build systems that behave correctly under race conditions, partial failures, and real-world edge cases. 
+
+This isn't a simple CRUD demo. Every layer is intentional. My goal was to prove I can **design before I code** (translating a 186-line plan into a 272-line `ARCHITECTURE.md`), **prove correctness logically**, and **ship a resilient system** that runs degraded on `sqlite:///` locally, yet scales effortlessly to `Postgres+Redis+Celery` in production.
+
+### 🧠 Core CS Skills & Architecture Demonstrated
+- **Distributed Concurrency & ACID:** Implemented a lock-free Compare-And-Swap (CAS) state machine in `services/booking.py`. This ensures zero double-bookings without relying on DB-specific `SELECT FOR UPDATE` locks.
+- **System Resilience (Graceful Degradation):** Designed the architecture so that the core booking flow never breaks. If Redis goes down, caching and rate-limiting fail open. If the LLM times out, a deterministic fallback heuristic kicks in. If the email API fails, an at-least-once Celery outbox pattern queues the message for retry.
+- **Advanced State Management:** Separated the domain model into `slots` (inventory/concurrency) and `appointments` (clinical record), ensuring that racing happens only on slots, keeping clinical writes contention-free.
+- **Security & Authorization:** Engineered dual-mode authentication (Cookie for UI, Bearer JWT for API). Implemented robust CSRF double-submit tokens and Fernet encryption at-rest for Google OAuth refresh tokens.
+
+### 💡 Key Problem Solving & Decisions
+| The Challenge | My Approach | The "Why" |
+|---|---|---|
+| **Preventing Double Bookings** | Single atomic `UPDATE ... WHERE status` CAS. | It is DB-agnostic (works on both SQLite and Postgres), avoids long transactions, and `rowcount` acts as an absolute proof of victory. |
+| **Slot Availability Calculation** | Materialized pre-generated rows instead of dynamic gap calculation. | Gives a natural row-level lock target, enables `ON CONFLICT DO NOTHING` idempotency, and maintains a clean audit trail. |
+| **Abandonment during Form-Fill** | A 2-phase hold (`free → held` for 10m). | Safely reserves the slot while patients read the AI summary, with a background Celery Beat sweep to reclaim abandoned holds. |
+| **Notification Failures** | Persist-then-send outbox table + 120s Beat sweep. | Guarantees durable, exactly-once delivery (via `dedupe_key`), surviving transient SMTP/Provider outages. |
+| **Doctor Leave Conflicts** | Atomic cascade: cancels appointments, enqueues emails, deletes calendar events. | Ensures no data anomalies exist when a doctor takes sudden leave. Bumped cache versions provide O(1) cache invalidation. |
+
+---
+
+## 🔍 How to Test Like an Engineer (Live App Walkthrough)
+
+I want you to try breaking the app at **[https://hcv-parth.up.railway.app](https://hcv-parth.up.railway.app)**. Here is exactly what to notice:
+
+### 1. Upfront Polish & Performance (30s)
+* **The Design:** Check out the warm mid-greige, terracotta, and forest UI (`style.css`). It's intentionally designed not to look like another generic "dark mode AI" wrapper.
+* **Frictionless Login:** Go to `/login` and tap the demo buttons to instantly fill credentials (`patient@clinic.test`, `dr.rao@clinic.test`, `admin@clinic.test`).
+* **Performance:** Notice the speed. `GET /api/doctors` is cached and versioned. Assets are properly cache-busted via mtime.
+
+### 2. The Patient Flow (Concurrency in Action)
+* **Start a Hold:** Log in as Patient. Search doctors and pick a slot. Notice the `Idempotency-Key` being sent under the hood (preventing double-creation on network retries).
+* **The Countdown:** Watch the live `Hold: MM:SS` countdown timer. It turns red under 1 minute.
+* **AI Degradation Test:** Submit symptoms. The app uses a Gemini LLM, but if you look at the backend code, you'll see a deterministic offline fallback heuristic (`_HIGH`/`_MEDIUM`) ready to take over if the AI fails.
+* **The Guarantee:** Open a second incognito tab. Try to book the exact same slot. You will immediately hit a `409` conflict — this is the CAS barrier protecting the DB.
+* **Rescheduling:** Try to reschedule. The app fetches available slots and only frees your old slot *if* the new CAS hold succeeds.
+
+### 3. Subtle Engineering Details
+* **Idempotent Holds:** If you click "Hold" twice on the same slot as the same patient without an idempotency key, it doesn't throw a 409. It returns your *existing* holding appointment. This handles edge cases where Redis is down and rate-limits fail open!
+* **UX Nuances:** The Patient appointments page is deliberately collapsed to avoid clutter. Prescriptions intelligently show "pending (+2 more)" previews.
+* **Security Checks:** Inspect network requests. Every mutating `POST` echoes an `X-CSRF-Token` header. Rate limiting (`30/300s`) protects the endpoints.
+
+### 4. Doctor & Admin Workflows
+* **Doctor Experience:** Log in as a Doctor. Notice how the schedule is auto-sorted, and the AI pre-visit urgency badges help prioritize. Complete a visit with shorthand notes (e.g., `1-0-1`, `PRN`), and see it automatically generate a patient-friendly summary and medication reminders (capped at 30 days via a unique constraint).
+* **Admin Experience:** Log in as Admin. Put a doctor on leave. Notice the system's atomicity: it adds `blocked` slots, queues per-patient cancellation emails, and handles calendar deletes. Removing the leave flips the slots back to `free` without erroneously restoring cancelled appointments.
+
+**Deployment Proof:** The app runs with full CI/CD on Railway, mapping `fly.toml` to a `Postgres + Redis + Celery + FastAPI` topology. It boots with `alembic upgrade head` and idempotent data seeding. Legal pages exist (`/privacy#tos`) for OAuth domain consent screens.
+
 ## Deployment notes
 
 - **Web:** run `alembic upgrade head` on release, then
